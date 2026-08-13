@@ -1,0 +1,15 @@
+bin/
+tmp/
+.env.production
+*.local.env
+
+# claude code ignore
+CLAUDE.md
+PLAN.md
+TODO.md
+
+# gostack.json is intentionally NOT ignored — the CLI reads it to know which
+# features this project has.
+#
+# .claude/ is intentionally NOT ignored either — the gostack skill travels with
+# the repo so every agent that opens it works from the same rules.
