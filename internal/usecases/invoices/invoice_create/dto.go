@@ -103,6 +103,38 @@ func (in *Input) Validate() error {
 	return nil
 }
 
+// RestrictToPublic applies the rules for a caller that presented no API key.
+//
+// Called after Validate, from the handler, when middleware admitted the request
+// through the public path. Each restriction closes something an anonymous caller
+// could otherwise do:
+//
+//   - external_id is the idempotency key, so accepting it would let anyone guess
+//     "order-42" and be handed that invoice back in full — id, amounts,
+//     description and metadata. It is a read of somebody else's order dressed as
+//     a write.
+//   - metadata is up to 8 KiB of arbitrary JSON stored per invoice. A browser has
+//     no business filling it, and an anonymous caller filling it is storage abuse.
+//   - expires_in is ignored rather than refused, because a browser has no reason
+//     to send it and a merchant's page might anyway: capping at the configured
+//     TTL stops an anonymous caller from holding a nonce — and with it an amount —
+//     for a day.
+func (in *Input) RestrictToPublic() error {
+	if in.ExternalID != "" {
+		return fmt.Errorf("%w: external_id is not accepted without %s",
+			domain.ErrInvalidInput, "X-Api-Key")
+	}
+	if len(in.Metadata) > 0 {
+		return fmt.Errorf("%w: metadata is not accepted without %s",
+			domain.ErrInvalidInput, "X-Api-Key")
+	}
+
+	in.ExpiresIn = ""
+	in.expiresIn = 0
+
+	return nil
+}
+
 type Output struct {
 	Invoice view.Invoice `json:"invoice"`
 	// Created distinguishes a fresh invoice from one returned again for a

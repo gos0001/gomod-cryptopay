@@ -19,7 +19,7 @@ func init() { gin.SetMode(gin.TestMode) }
 func serve(t *testing.T, keys []string, header string) int {
 	t.Helper()
 
-	mw := New(Config{Keys: keys})
+	mw := New(Config{Keys: keys}, CORSConfig{}, PublicConfig{RatePerMinute: 60, Burst: 10})
 
 	r := gin.New()
 	r.GET("/guarded", mw.APIKey(), func(c *gin.Context) { c.Status(http.StatusTeapot) })
@@ -78,8 +78,9 @@ func TestAPIKeyRejectsEmptyHeaderAgainstEmptyKey(t *testing.T) {
 	}
 }
 
-// loadFrom writes contents to a temp config file and loads the api section.
-func loadFrom(t *testing.T, contents string) (Config, error) {
+// loadFile writes contents to a temp config file and opens it. Shared with the
+// cors and public_api tests, which load their own sections from it.
+func loadFile(t *testing.T, contents string) *config.File {
 	t.Helper()
 
 	path := filepath.Join(t.TempDir(), "config.json")
@@ -91,7 +92,13 @@ func loadFrom(t *testing.T, contents string) (Config, error) {
 	if err != nil {
 		t.Fatalf("load: %v", err)
 	}
-	return LoadConfig(file)
+	return file
+}
+
+// loadFrom loads the api section out of contents.
+func loadFrom(t *testing.T, contents string) (Config, error) {
+	t.Helper()
+	return LoadConfig(loadFile(t, contents))
 }
 
 func TestLoadConfigRejectsShortKey(t *testing.T) {

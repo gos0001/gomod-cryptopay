@@ -396,3 +396,75 @@ func TestValidateTrimsAndAcceptsMinimalInput(t *testing.T) {
 		t.Fatalf("got %+v", in)
 	}
 }
+
+// The public path exists so a customer's browser can create an invoice without
+// holding an API key. These three restrictions are what make that safe.
+
+// external_id is the idempotency key: accepting it anonymously would let anyone
+// guess "order-42" and be handed that invoice in full — a read of somebody else's
+// order dressed up as a write.
+func TestRestrictToPublicRefusesExternalID(t *testing.T) {
+	in := Input{Network: "tron", Symbol: "USDT", Amount: "10", ExternalID: "order-42"}
+	if err := in.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	err := in.RestrictToPublic()
+	if err == nil {
+		t.Fatal("want an error")
+	}
+	if !errors.Is(err, domain.ErrInvalidInput) {
+		t.Errorf("error should wrap ErrInvalidInput: %v", err)
+	}
+	if !strings.Contains(err.Error(), "external_id") {
+		t.Errorf("message should name the field: %v", err)
+	}
+}
+
+// Up to 8 KiB of arbitrary JSON per invoice, from an anonymous caller, is storage
+// abuse — and a browser has nothing to put there.
+func TestRestrictToPublicRefusesMetadata(t *testing.T) {
+	in := Input{Network: "tron", Symbol: "USDT", Amount: "10", Metadata: []byte(`{"a":1}`)}
+	if err := in.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	if err := in.RestrictToPublic(); err == nil {
+		t.Fatal("want an error")
+	}
+}
+
+// Ignored rather than refused: a merchant's page may well send it, and there is
+// no reason to fail the payment over it. Capping at the configured TTL stops an
+// anonymous caller from holding a nonce — and with it an amount — for a day.
+func TestRestrictToPublicIgnoresExpiresIn(t *testing.T) {
+	in := Input{Network: "tron", Symbol: "USDT", Amount: "10", ExpiresIn: "24h"}
+	if err := in.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+	if in.expiresIn == 0 {
+		t.Fatal("precondition: Validate should have parsed expires_in")
+	}
+
+	if err := in.RestrictToPublic(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if in.expiresIn != 0 || in.ExpiresIn != "" {
+		t.Fatalf("expires_in survived: %q / %s", in.ExpiresIn, in.expiresIn)
+	}
+}
+
+// Everything a payer legitimately needs still goes through.
+func TestRestrictToPublicAllowsAnOrdinaryRequest(t *testing.T) {
+	in := Input{Network: "tron", Symbol: "USDT", Amount: "10.50", Description: "Order for a widget"}
+	if err := in.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	if err := in.RestrictToPublic(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if in.Amount != "10.50" || in.Description == "" {
+		t.Fatalf("a legitimate field was dropped: %+v", in)
+	}
+}

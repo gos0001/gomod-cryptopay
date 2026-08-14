@@ -47,6 +47,8 @@ func checkConfigFile(path config.Path) int {
 		{"postgres", func(f *config.File) error { _, err := pkgpostgres.LoadConfig(f); return err }},
 		{"postgres.auto_schema", func(f *config.File) error { _, err := dbschema.LoadConfig(f); return err }},
 		{"api", func(f *config.File) error { _, err := middleware.LoadConfig(f); return err }},
+		{"cors", func(f *config.File) error { _, err := middleware.LoadCORSConfig(f); return err }},
+		{"public_api", func(f *config.File) error { _, err := middleware.LoadPublicConfig(f); return err }},
 		{"bootstrap", func(f *config.File) error { _, err := bootstrap.LoadConfig(f); return err }},
 		{"cron", func(f *config.File) error { _, err := cron.LoadConfig(f); return err }},
 		{"assets", func(f *config.File) error { _, err := asset_seeder.LoadConfig(f); return err }},

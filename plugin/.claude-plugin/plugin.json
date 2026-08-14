@@ -1,0 +1,10 @@
+{
+  "name": "cryptopay",
+  "description": "Integrate gomod-cryptopay — a self-hosted, watch-only crypto payment service for TRON and BSC — into your project. Covers deploying the container, the unique-amount matching scheme that decides which transfer pays which invoice, creating invoices from a backend or straight from a browser, and verifying signed webhooks.",
+  "version": "1.1.0",
+  "author": {
+    "name": "gos0001",
+    "url": "https://github.com/gos0001"
+  },
+  "homepage": "https://github.com/gos0001/gomod-cryptopay"
+}

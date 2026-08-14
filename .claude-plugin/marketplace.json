@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "cryptopay",
+  "description": "Claude Code plugin for integrating gomod-cryptopay, a self-hosted crypto payment service, into your own project.",
+  "owner": {
+    "name": "gos0001",
+    "url": "https://github.com/gos0001"
+  },
+  "plugins": [
+    {
+      "name": "cryptopay",
+      "description": "Deploy gomod-cryptopay and wire it into your service: container setup, invoice creation from a backend or a browser, and webhook verification.",
+      "source": "./plugin",
+      "category": "payments",
+      "homepage": "https://github.com/gos0001/gomod-cryptopay"
+    }
+  ]
+}

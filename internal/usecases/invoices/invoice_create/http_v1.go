@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/gos0001/gomod-cryptopay/internal/apierr"
+	"github.com/gos0001/gomod-cryptopay/internal/middleware"
 	httpserver "github.com/gos0001/gomod-cryptopay/pkg/http_server"
 )
 
@@ -32,6 +33,13 @@ func (h *HTTPv1) Handle(c *gin.Context) {
 		// showing rather than collapsing into "invalid request".
 		apierr.BadRequest(c, apierr.Message(err))
 		return
+	}
+
+	if middleware.IsPublic(c) {
+		if err := in.RestrictToPublic(); err != nil {
+			apierr.BadRequest(c, apierr.Message(err))
+			return
+		}
 	}
 
 	out, err := h.uc.Execute(c.Request.Context(), in)

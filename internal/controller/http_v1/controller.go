@@ -30,6 +30,11 @@ func New(
 	r := gin.New()
 	r.Use(gin.Recovery())
 
+	// Before the key guard, and that ordering is load-bearing: a browser sends no
+	// X-Api-Key on a preflight, so an OPTIONS answered 401 would stop the real
+	// request from ever being sent.
+	r.Use(mw.CORS())
+
 	// Outside the key: a container healthcheck and a load balancer have no
 	// credentials, and the endpoint reveals nothing beyond whether the database
 	// is reachable.
@@ -40,7 +45,6 @@ func New(
 	// default — forgetting to add it is the failure mode worth designing out.
 	v1 := r.Group("/api/v1", mw.APIKey())
 	{
-		v1.POST("/invoices", invoiceCreate.Handle)
 		v1.GET("/invoices", invoiceList.Handle)
 		v1.GET("/invoices/:id", invoiceGet.Handle)
 		v1.POST("/invoices/:id/cancel", invoiceCancel.Handle)
@@ -50,6 +54,15 @@ func New(
 		// Reconciliation: transfers that arrived and matched no invoice.
 		v1.GET("/orphans", orphanList.Handle)
 	}
+
+	// Creation is the one endpoint a customer's browser may reach, and only when
+	// public_api.invoice_create says so. It sits outside the group above because
+	// its guard is a different one; with the flag off, APIKeyOrPublic answers 401
+	// exactly as APIKey would.
+	//
+	// Nothing else is opened: an anonymous caller cannot list invoices, read one
+	// back, cancel one, or see orphan transfers.
+	r.POST("/api/v1/invoices", mw.APIKeyOrPublic(), invoiceCreate.Handle)
 
 	// gostack:routes
 
