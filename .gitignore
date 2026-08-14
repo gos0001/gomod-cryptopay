@@ -1,7 +1,21 @@
 bin/
 tmp/
-.env.production
-*.local.env
+
+# The Hardhat bench: dependencies, build output and the addresses of whatever
+# was last deployed locally.
+hardhat/node_modules/
+hardhat/artifacts/
+hardhat/cache/
+hardhat/deployed.json
+
+# The configuration file holds the API keys, the database URL and the chain API
+# credentials — there is no environment fallback, so everything lives in it.
+# config.development.json and config.example.json are committed on purpose: one
+# carries only local throwaway values, the other only placeholders.
+config.json
+config.*.json
+!config.example.json
+!config.development.json
 
 # claude code ignore
 CLAUDE.md

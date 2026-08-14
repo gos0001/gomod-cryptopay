@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      # Only the maintenance database is needed here — the service creates its
+      # own on first start via postgres.auto_create, and the schema with it.
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    # Pulls the published image by default. `docker compose build app` still
+    # builds from source and overrides it locally.
+    image: ${IMAGE:-ghcr.io/gos0001/gomod-cryptopay}:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
+        COMMIT: ${COMMIT:-none}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+    ports:
+      - "8080:8080"
+    # The configuration file is the service's only input: there is no env_file and
+    # no environment block, because the service reads no environment variables at
+    # all. Copy config.example.json to config.json, fill it in, and point
+    # postgres.dsn at the `postgres` host below rather than localhost.
+    #
+    # create_host_path: false is the point of the long syntax here. By default —
+    # in the short form *and* the long one — a missing source is created as an
+    # empty *directory*, the container then fails on "not a file", and the reader
+    # goes looking in the wrong place while a stray config.json/ directory sits in
+    # the working copy. With it off, compose refuses to start and names the path.
+    volumes:
+      - type: bind
+        source: ./config.json
+        target: /etc/cryptopay/config.json
+        read_only: true
+        bind:
+          create_host_path: false
+    restart: unless-stopped
+    # Repeated from the image so `docker compose up` reports health even when the
+    # image was replaced by a build, and so the interval can be tuned here.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+      start_period: 15s
+      retries: 3
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

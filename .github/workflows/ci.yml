@@ -1,0 +1,133 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # go-version-file keeps the toolchain tied to go.mod, so CI and the
+      # Dockerfile can never drift apart on the Go version.
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # No service containers: every test is a unit test. The postgres adapter is
+      # exercised through in-package fakes, and the TRON and BSC clients through
+      # httptest, so nothing here needs a live database or a chain node.
+      - run: go vet ./...
+      - run: go test ./... -race -count=1
+
+      # -check-config calls every package's LoadConfig by hand instead of building
+      # the wire graph, which is what lets it run here: a configuration check that
+      # needed a reachable Postgres would be useless in CI.
+      - name: Validate the example configuration
+        run: go run ./cmd -check-config -config config.development.json
+
+  # The local EVM bench, kept out of `test` on purpose: it pulls Node and runs
+  # noticeably longer, and a broken contract must not hide the result of the
+  # ordinary test run.
+  hardhat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: hardhat/package-lock.json
+
+      - run: npm ci
+        working-directory: hardhat
+
+      - run: npx hardhat compile
+        working-directory: hardhat
+
+      # No --network localhost and no background node: the default network runs
+      # in-process, and deploy.js goes through hre.ethers either way. This checks
+      # that the contract still deploys and the script still matches it.
+      - run: npx hardhat run scripts/deploy.js
+        working-directory: hardhat
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      # Lets the built-in GITHUB_TOKEN push to GHCR — no personal access token to
+      # create, store, or rotate.
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # QEMU only matters for the arm64 leg. The Dockerfile cross-compiles, so
+      # emulation never touches the Go build itself.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      # Pull requests build but never publish: a fork must not be able to push an
+      # image under this repository's name.
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tag scheme:
+      #   push to main    -> edge, sha-abc1234
+      #   push tag v1.2.3 -> 1.2.3, 1.2, 1, latest, sha-abc1234
+      #
+      # `latest` is left to `flavor: latest=auto`, which applies it only on a
+      # semver tag and skips pre-releases. Pointing `latest` at the tip of main
+      # instead — as a raw tag enabled on the default branch would — means the
+      # first merge after a release silently replaces the released image for
+      # everyone pulling `latest`. `edge` is the tag for "newest commit on main".
+      - name: Resolve tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          flavor: latest=auto
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=edge,branch=main
+            type=sha,format=short
+
+      # Stamped into the binary and read back by `cryptopay version`. Computed
+      # here rather than taken from the repository metadata, which records when
+      # the repository record changed and not when this image was built.
+      - name: Stamp build date
+        run: echo "BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            COMMIT=${{ github.sha }}
+            BUILD_DATE=${{ env.BUILD_DATE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

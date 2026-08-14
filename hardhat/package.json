@@ -1,0 +1,15 @@
+{
+  "name": "gomod-cryptopay-bench",
+  "private": true,
+  "description": "Local EVM node for developing and testing the BSC watcher. Not part of the Go build.",
+  "scripts": {
+    "node": "hardhat node",
+    "deploy": "hardhat run scripts/deploy.js --network localhost",
+    "transfer": "hardhat run scripts/transfer.js --network localhost"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.1.3",
+    "ethers": "^6.17.0",
+    "hardhat": "^2.22.0"
+  }
+}

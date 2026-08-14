@@ -1,0 +1,84 @@
+{
+  "app": {
+    "addr": ":8080"
+  },
+  "log": {
+    "level": "info",
+    "format": "json"
+  },
+  "postgres": {
+    "dsn": "postgres://USER:PASSWORD@HOST:5432/cryptopay?sslmode=require",
+    "auto_create": true,
+    "auto_schema": true
+  },
+  "api": {
+    "keys": [
+      "REPLACE-ME-openssl-rand-hex-32"
+    ]
+  },
+  "bootstrap": {
+    "timeout": "60s"
+  },
+  "cron": {
+    "shutdown_timeout": "15s"
+  },
+  "invoices": {
+    "ttl": "30m",
+    "amount_hold": "2h",
+    "expire_interval": "1m",
+    "pay_address_tron": "REPLACE-WITH-YOUR-TRON-RECEIVING-ADDRESS",
+    "pay_address_bsc": "0xREPLACE-WITH-YOUR-BSC-RECEIVING-ADDRESS"
+  },
+  "tron": {
+    "api_url": "https://api.trongrid.io",
+    "api_key": "REPLACE-WITH-YOUR-TRONGRID-API-KEY",
+    "daily_request_budget": 100000,
+    "qps": 10,
+    "timeout": "15s",
+    "watch_interval": "5s",
+    "stale_after": "5m"
+  },
+  "bsc": {
+    "rpc_urls": [
+      "https://REPLACE-WITH-YOUR-BSC-RPC-ENDPOINT"
+    ],
+    "log_range": 2000,
+    "use_finalized_tag": true,
+    "confirmations": 15,
+    "reorg_depth": 64,
+    "timeout": "20s",
+    "failure_cooldown": "30s",
+    "watch_interval": "5s"
+  },
+  "assets": [
+    {
+      "network": "tron",
+      "symbol": "USDT",
+      "contract_address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "decimals": 6,
+      "step": "100",
+      "nonce_max": 1000
+    },
+    {
+      "network": "bsc",
+      "symbol": "USDT",
+      "contract_address": "0x55d398326f99059ff775485246999027b3197955",
+      "decimals": 18,
+      "step": "100000000000000",
+      "nonce_max": 1000
+    }
+  ],
+  "webhook": {
+    "url": "https://merchant.example/hooks/cryptopay",
+    "secret": "REPLACE-ME-openssl-rand-hex-32",
+    "api_key": "",
+    "timeout": "10s",
+    "interval": "10s",
+    "batch_size": 50,
+    "concurrency": 4,
+    "max_attempts": 10,
+    "backoff_base": "10s",
+    "backoff_max": "1h",
+    "retention": "168h"
+  }
+}

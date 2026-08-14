@@ -1,0 +1,84 @@
+{
+  "app": {
+    "addr": ":8080"
+  },
+  "log": {
+    "level": "debug",
+    "format": "console"
+  },
+  "postgres": {
+    "dsn": "postgres://postgres:postgres@localhost:5432/cryptopay_dev?sslmode=disable",
+    "auto_create": true,
+    "auto_schema": true
+  },
+  "api": {
+    "keys": [
+      "dev-0123456789abcdef0123456789abcdef"
+    ]
+  },
+  "bootstrap": {
+    "timeout": "60s"
+  },
+  "cron": {
+    "shutdown_timeout": "15s"
+  },
+  "invoices": {
+    "ttl": "30m",
+    "amount_hold": "2h",
+    "expire_interval": "1m",
+    "pay_address_tron": "TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb",
+    "pay_address_bsc": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+  },
+  "tron": {
+    "api_url": "https://api.trongrid.io",
+    "api_key": "",
+    "daily_request_budget": 100000,
+    "qps": 10,
+    "timeout": "15s",
+    "watch_interval": "5s",
+    "stale_after": "5m"
+  },
+  "bsc": {
+    "rpc_urls": [
+      "http://localhost:8545"
+    ],
+    "log_range": 2000,
+    "use_finalized_tag": true,
+    "confirmations": 15,
+    "reorg_depth": 64,
+    "timeout": "20s",
+    "failure_cooldown": "30s",
+    "watch_interval": "5s"
+  },
+  "assets": [
+    {
+      "network": "tron",
+      "symbol": "USDT",
+      "contract_address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "decimals": 6,
+      "step": "100",
+      "nonce_max": 1000
+    },
+    {
+      "network": "bsc",
+      "symbol": "USDT",
+      "contract_address": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+      "decimals": 18,
+      "step": "100000000000000",
+      "nonce_max": 1000
+    }
+  ],
+  "webhook": {
+    "url": "http://127.0.0.1:9099/hooks",
+    "secret": "dev-0123456789abcdef0123456789abcdef",
+    "api_key": "",
+    "timeout": "10s",
+    "interval": "10s",
+    "batch_size": 50,
+    "concurrency": 4,
+    "max_attempts": 10,
+    "backoff_base": "10s",
+    "backoff_max": "1h",
+    "retention": "168h"
+  }
+}

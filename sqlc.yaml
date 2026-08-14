@@ -1,0 +1,37 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "internal/adapter/postgres/queries"
+    # The same file the service applies at startup, so generated code cannot
+    # assume a column the running database does not have.
+    schema: "schema/schema.sql"
+    gen:
+      go:
+        package: "generated"
+        out: "internal/adapter/postgres/generated"
+        # The pool is pgxpool, so the generated DBTX interface has to be the pgx
+        # one. The default emits database/sql signatures, which will not accept
+        # it.
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_prepared_queries: false
+        emit_interface: false
+        emit_exact_table_names: false
+        overrides:
+          # NUMERIC(78,0) arrives as a decimal string rather than
+          # pgtype.Numeric. Every amount in this service is a big.Int of
+          # smallest units, and big.Int reads and writes base-10 strings
+          # exactly — whereas pgtype.Numeric's Int/Exp pair would have to be
+          # renormalised on the way past, for no gain at a scale of zero.
+          - db_type: "pg_catalog.numeric"
+            go_type: "string"
+          - db_type: "pg_catalog.numeric"
+            nullable: true
+            go_type:
+              type: "string"
+              pointer: true
+
+          # Only numeric is overridden. Overrides for uuid and timestamptz were
+          # tried and sqlc ignores them under sql_package: pgx/v5 — it emits
+          # pgtype wrappers for those regardless. The conversions live in
+          # convert.go instead, which is where the pgtype boundary is confined.

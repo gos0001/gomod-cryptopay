@@ -1,0 +1,17 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./bin/app ./cmd"
+  bin = "./bin/app"
+  args_bin = ["-config", "config.development.json"]
+  delay = 1000
+  exclude_dir = ["tmp", "bin", "generated", "static", "node_modules"]
+  include_ext = ["go"]
+  exclude_regex = ["_test\\.go"]
+
+[screen]
+  clear_on_rebuild = true
+
+[log]
+  time = true

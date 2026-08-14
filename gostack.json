@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "name": "gomod-cryptopay",
+  "module": "github.com/gos0001/gomod-cryptopay",
+  "features": {
+    "frontend": false,
+    "postgres": true,
+    "redis": false,
+    "docker": true
+  }
+}

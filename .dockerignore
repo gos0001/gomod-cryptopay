@@ -1,0 +1,29 @@
+# Keep the build context to what the compiler actually needs. Everything here
+# would otherwise be copied into a build layer and cached — including secrets.
+
+bin/
+tmp/
+.git/
+.github/
+
+# The local EVM stand. 315 MB of artifacts, cache and node_modules that the Go
+# build has no use for, and which would otherwise be uploaded as build context
+# and kept in the shared build cache.
+hardhat/
+
+# The real configuration carries API keys and the database URL. It never reaches
+# the final image (only the binary is copied forward), but it would land in a
+# build layer and in the shared build cache. It is mounted at runtime instead.
+config.json
+config.*.json
+!config.example.json
+
+Dockerfile*
+docker-compose.yml
+.dockerignore
+
+.claude/
+*.md
+
+# NOTE: schema/ is deliberately NOT ignored — schema/embed.go compiles the .sql
+# into the binary so the image can create its own tables.
