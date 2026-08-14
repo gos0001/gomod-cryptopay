@@ -5,8 +5,10 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/gos0001/gomod-cryptopay.svg)](https://pkg.go.dev/github.com/gos0001/gomod-cryptopay)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+> **Stable: `v1.1.0`** — `ghcr.io/gos0001/gomod-cryptopay:1`
+
 ```bash
-docker pull ghcr.io/gos0001/gomod-cryptopay:1
+docker pull ghcr.io/gos0001/gomod-cryptopay:1.1.0
 ```
 
 Crypto payment service in a container. It issues invoices, watches TRON and BSC
