@@ -1,7 +1,7 @@
 # gomod-cryptopay
 
 [![CI](https://github.com/gos0001/gomod-cryptopay/actions/workflows/ci.yml/badge.svg)](https://github.com/gos0001/gomod-cryptopay/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/tag/gos0001/gomod-cryptopay?label=release&sort=semver)](https://github.com/gos0001/gomod-cryptopay/pkgs/container/gomod-cryptopay)
+[![Release](https://img.shields.io/github/v/tag/gos0001/gomod-cryptopay?label=release&sort=semver&cacheSeconds=3600)](https://github.com/gos0001/gomod-cryptopay/pkgs/container/gomod-cryptopay)
 [![Go Reference](https://pkg.go.dev/badge/github.com/gos0001/gomod-cryptopay.svg)](https://pkg.go.dev/github.com/gos0001/gomod-cryptopay)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
