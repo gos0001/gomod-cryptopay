@@ -40,8 +40,9 @@ Framework notes worth stating explicitly, because each has a trap:
 - **FastAPI / Flask** — `await request.body()` / `request.get_data()`, not the
   parsed model.
 - **Rails** — `request.raw_post`.
-- **Go** — read the body once into a slice, then hand that slice to both the
-  verifier and the decoder.
+- **Go** — do not hand-roll it. `cryptopay.WebhookHandler(secret, fn)` from
+  `github.com/gos0001/gomod-cryptopay/pkg/cryptopay` does all four checks and the
+  status codes; `cryptopay.VerifyRequest` is the version for a custom router.
 
 ## 3. Handling the events
 

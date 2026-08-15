@@ -2,6 +2,33 @@
 
 One shape: your backend creates the invoice and shows the payer what came back.
 
+## Go projects: use the client
+
+For a Go service there is a client in the same module, and it should be preferred
+to hand-rolled HTTP — it carries the error mapping, the cursor loop and, most
+importantly, a webhook handler that verifies the signature correctly.
+
+```bash
+go get github.com/gos0001/gomod-cryptopay
+```
+
+```go
+import "github.com/gos0001/gomod-cryptopay/pkg/cryptopay"
+
+c := cryptopay.New("http://cryptopay:8080", key)
+
+inv, created, err := c.CreateInvoice(ctx, cryptopay.CreateInvoiceRequest{
+    Network: cryptopay.NetworkTron, Symbol: "USDT",
+    Amount: "10.50", ExternalID: order.ID,
+})
+```
+
+`errors.Is(err, cryptopay.ErrNotFound)` and friends work; `*cryptopay.APIError`
+carries the status and the service's own message. `c.AllInvoices(ctx, filter)`
+walks the cursor for you.
+
+The sections below describe the HTTP API itself, for every other language.
+
 ## From your backend
 
 The key lives on your server. Your backend creates the invoice, stores its id

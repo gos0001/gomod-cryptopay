@@ -5,10 +5,10 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/gos0001/gomod-cryptopay.svg)](https://pkg.go.dev/github.com/gos0001/gomod-cryptopay)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> **Stable: `v1.2.0`** — `ghcr.io/gos0001/gomod-cryptopay:1.2`
+> **Stable: `v1.2.1`** — `ghcr.io/gos0001/gomod-cryptopay:1.2`
 
 ```bash
-docker pull ghcr.io/gos0001/gomod-cryptopay:1.2.0
+docker pull ghcr.io/gos0001/gomod-cryptopay:1.2.1
 ```
 
 Crypto payment service in a container. It issues invoices, watches TRON and BSC
@@ -379,6 +379,69 @@ way to notice that signing was never switched on.
 The authoritative list of sections is `cmd/checkconfig.go`.
 
 ---
+
+## Go client
+
+```bash
+go get github.com/gos0001/gomod-cryptopay@v1.2.1
+```
+
+```go
+import "github.com/gos0001/gomod-cryptopay/pkg/cryptopay"
+
+c := cryptopay.New("http://cryptopay:8080", os.Getenv("CRYPTOPAY_KEY"))
+
+inv, created, err := c.CreateInvoice(ctx, cryptopay.CreateInvoiceRequest{
+    Network:    cryptopay.NetworkTron,
+    Symbol:     "USDT",
+    Amount:     "10.50",
+    ExternalID: order.ID,          // idempotency: a retry returns the same invoice
+})
+_ = created                        // false when the invoice already existed
+
+render(inv.PayAddress, inv.PayAmount)   // never inv.Amount
+```
+
+Errors carry the status and the service's message, and match sentinels:
+
+```go
+if errors.Is(err, cryptopay.ErrNotFound) { ... }
+
+var apiErr *cryptopay.APIError
+if errors.As(err, &apiErr) {
+    log.Printf("%s answered %d: %s", apiErr.Endpoint, apiErr.StatusCode, apiErr.Message)
+}
+```
+
+Paging is handled for you — `AllInvoices` follows the cursor:
+
+```go
+for inv, err := range c.AllInvoices(ctx, cryptopay.InvoiceFilter{Status: cryptopay.StatusPending}) {
+    if err != nil {
+        return err
+    }
+    ...
+}
+```
+
+And the receiving end of the webhook, with the raw body, the HMAC and the
+timestamp window all handled:
+
+```go
+mux.Handle("/hooks/cryptopay", cryptopay.WebhookHandler(secret,
+    func(ctx context.Context, e cryptopay.Event) error {
+        if e.Event != cryptopay.EventConfirmed {
+            return nil                       // detected is not paid
+        }
+        return orders.MarkPaid(ctx, e.InvoiceID)   // must be idempotent
+    }))
+```
+
+It answers 401 on any verification failure, 400 on an unreadable body, 500 when
+your function returns an error — which makes the service redeliver — and 200
+otherwise. Deduplication is left to you: `Event.ID` is stable across retries, and
+the record of what you have already processed belongs in your database, not in a
+library that forgets it on restart.
 
 ## Claude Code plugin
 
