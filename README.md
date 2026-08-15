@@ -5,7 +5,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/gos0001/gomod-cryptopay.svg)](https://pkg.go.dev/github.com/gos0001/gomod-cryptopay)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> **Stable: `v1.2.0`** — `ghcr.io/gos0001/gomod-cryptopay:1`
+> **Stable: `v1.2.0`** — `ghcr.io/gos0001/gomod-cryptopay:1.2`
 
 ```bash
 docker pull ghcr.io/gos0001/gomod-cryptopay:1.2.0
