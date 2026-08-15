@@ -13,7 +13,7 @@ config: no configuration file at "/etc/cryptopay/config.json" (pass -config to p
 ```yaml
 services:
   cryptopay:
-    image: ghcr.io/gos0001/gomod-cryptopay:1
+    image: ghcr.io/gos0001/gomod-cryptopay:1.2.1
     ports: ["8080:8080"]
     volumes:
       - type: bind
@@ -64,7 +64,7 @@ Validate without a database, which is what makes it usable in CI:
 
 ```bash
 docker run --rm -v ./cryptopay.json:/c.json:ro \
-  ghcr.io/gos0001/gomod-cryptopay:1 -check-config -config /c.json
+  ghcr.io/gos0001/gomod-cryptopay:1.2.1 -check-config -config /c.json
 ```
 
 ## The settings that carry consequences

@@ -9,7 +9,7 @@ A crypto payment service you run as a container. It answers one question:
 **has this invoice been paid.** Orders, carts, subscriptions and refunds stay in
 the service that owns them.
 
-Image: `ghcr.io/gos0001/gomod-cryptopay:1` · Source:
+Image: `ghcr.io/gos0001/gomod-cryptopay:1.2.1` · Source:
 https://github.com/gos0001/gomod-cryptopay
 
 ## What it does, and what it does not

@@ -43,7 +43,7 @@ those are not questions.
 `api`, `invoices`, `assets`, `tron`/`bsc`, `webhook`. `postgres.dsn` names a
 database nothing else uses; cryptopay creates it and its schema on start.
 
-**Compose service** — image `ghcr.io/gos0001/gomod-cryptopay:1`, the config
+**Compose service** — image `ghcr.io/gos0001/gomod-cryptopay:1.2.1`, the config
 bind-mounted read-only with `bind: {create_host_path: false}`, `depends_on` the
 existing postgres with `condition: service_healthy`. Publish 8080 only if the
 browser will reach it directly; otherwise leave it on the internal network.

@@ -5,7 +5,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/gos0001/gomod-cryptopay.svg)](https://pkg.go.dev/github.com/gos0001/gomod-cryptopay)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> **Stable: `v1.2.1`** — `ghcr.io/gos0001/gomod-cryptopay:1.2`
+> **Stable: `v1.2.1`** — `ghcr.io/gos0001/gomod-cryptopay:1.2.1`
 
 ```bash
 docker pull ghcr.io/gos0001/gomod-cryptopay:1.2.1
@@ -37,7 +37,7 @@ services:
       retries: 5
 
   cryptopay:
-    image: ghcr.io/gos0001/gomod-cryptopay:1
+    image: ghcr.io/gos0001/gomod-cryptopay:1.2.1
     ports: ["8080:8080"]
     volumes:
       - type: bind
@@ -68,7 +68,7 @@ Check a configuration without starting anything — no database needed:
 
 ```bash
 docker run --rm -v ./config.json:/c.json:ro \
-  ghcr.io/gos0001/gomod-cryptopay:1 -check-config -config /c.json
+  ghcr.io/gos0001/gomod-cryptopay:1.2.1 -check-config -config /c.json
 ```
 
 ---
