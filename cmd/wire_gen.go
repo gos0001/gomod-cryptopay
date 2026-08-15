@@ -59,15 +59,7 @@ func InitializeApp(configPath config.Path) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	corsConfig, err := middleware.LoadCORSConfig(file)
-	if err != nil {
-		return nil, err
-	}
-	publicConfig, err := middleware.LoadPublicConfig(file)
-	if err != nil {
-		return nil, err
-	}
-	middlewareMiddleware := middleware.New(middlewareConfig, corsConfig, publicConfig)
+	middlewareMiddleware := middleware.New(middlewareConfig)
 	postgresConfig, err := postgres.LoadConfig(file)
 	if err != nil {
 		return nil, err

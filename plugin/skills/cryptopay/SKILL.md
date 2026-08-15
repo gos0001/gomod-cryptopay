@@ -1,6 +1,6 @@
 ---
 name: cryptopay
-description: Integrate gomod-cryptopay, a self-hosted crypto payment service, into this project. Use when adding crypto payments, USDT/TRC20/BEP-20 acceptance, invoices, or payment webhooks to a service that uses or could use cryptopay; when the project references ghcr.io/gos0001/gomod-cryptopay, cp_invoices, X-Cryptopay-Signature, or a cryptopay config.json; or when the user mentions cryptopay by name. Covers deploying the container, the unique-amount matching scheme, creating invoices from a backend or a browser, and verifying webhooks.
+description: Integrate gomod-cryptopay, a self-hosted crypto payment service, into this project. Use when adding crypto payments, USDT/TRC20/BEP-20 acceptance, invoices, or payment webhooks to a service that uses or could use cryptopay; when the project references ghcr.io/gos0001/gomod-cryptopay, cp_invoices, X-Cryptopay-Signature, or a cryptopay config.json; or when the user mentions cryptopay by name. Covers deploying the container, the unique-amount matching scheme, creating invoices from your backend, and verifying webhooks.
 ---
 
 # cryptopay
@@ -57,10 +57,11 @@ Full reasoning, and what to set `step` to: `references/amount-matching.md`.
    column in your own table. Separate databases make it impossible anyway, which
    is the point.
 
-5. **Never ship `api.keys` to a browser.** The key grants listing every invoice,
-   cancelling any of them, and reading orphan transfers. If a page must create
-   invoices directly, use `public_api.invoice_create` — creation only, no key, rate
-   limited (`references/integrate.md`).
+5. **This is a server-to-server API — the key never leaves your backend.** Every
+   endpoint is authenticated, invoice creation included, and the service belongs on
+   an internal network. A customer's browser talks to *your* backend, which creates
+   the invoice and hands back the address and amount. Shipping `api.keys` to a page
+   would grant every visitor the right to list, cancel and reconcile.
 
 6. **Verify the webhook signature before believing anything in the body.** HMAC
    over `"<timestamp>.<body>"`, compared in constant time, with stale timestamps
@@ -87,7 +88,7 @@ Full reasoning, and what to set `step` to: `references/amount-matching.md`.
 |---|---|
 | `references/deploy.md` | adding the service to a compose file or cluster; writing its config |
 | `references/amount-matching.md` | choosing `step` and `nonce_max`, or explaining why a transfer was not credited |
-| `references/integrate.md` | creating invoices, from a backend or a browser, and modelling status in your own schema |
+| `references/integrate.md` | creating invoices, showing the payer what to send, and modelling status in your own schema |
 | `references/webhooks.md` | writing or debugging the receiver |
 
 ## Commands

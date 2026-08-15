@@ -1,8 +1,8 @@
 # Creating invoices and tracking them
 
-Two shapes, and they are not alternatives — most projects use both.
+One shape: your backend creates the invoice and shows the payer what came back.
 
-## From your backend (the default)
+## From your backend
 
 The key lives on your server. Your backend creates the invoice, stores its id
 against the order, and shows the payer what came back.
@@ -40,43 +40,24 @@ Show `pay_address` and `pay_amount`. Never `amount`.
 | `expires_in` | duration string, `"45m"`; defaults to `invoices.ttl`, capped at 24h |
 | `description`, `metadata` | echoed back; metadata is any JSON up to 8 KiB |
 
-## From the browser
+## From a browser
 
-Set `public_api.invoice_create: true` and list the site in
-`cors.allowed_origins`. The page then creates an invoice with **no key in the
-JavaScript**:
+Never directly. Every endpoint requires `X-Api-Key`, and a key in JavaScript is a
+key every visitor has — it lists invoices, cancels them and reads orphan transfers.
 
-```js
-const r = await fetch('https://pay.example.com/api/v1/invoices', {
-  method: 'POST',
-  headers: {'Content-Type': 'application/json'},
-  body: JSON.stringify({network: 'tron', symbol: 'USDT', amount: '10.50'}),
-});
-const {data} = await r.json();
-render(data.invoice.pay_address, data.invoice.pay_amount);
+The shape is the same as any other payment provider:
+
+```
+browser ──► your backend ──► cryptopay      (creates the invoice, holds the key)
+browser ◄── your backend                    (pay_address, pay_amount)
+        …
+cryptopay ──► your backend                  (webhook: invoice.confirmed)
+browser ◄── your backend                    (your own status endpoint or socket)
 ```
 
-Only creation is public. The page **cannot** list invoices, read one back, cancel
-one, or see orphan transfers — so the status comes from your own backend, which
-learns it from the webhook. There is no public endpoint to poll, on purpose: one
-would let anyone enumerate your invoices.
-
-Three fields are refused or ignored without a key:
-
-- `external_id` → `400`. It is the idempotency key, so accepting it anonymously
-  would let anyone guess `order-42` and be handed that invoice in full.
-- `metadata` → `400`.
-- `expires_in` → ignored; the configured TTL applies.
-
-So a browser-created invoice has no `external_id`, and you must carry its `id`
-back to your own order yourself — usually by POSTing the returned id to your
-backend, or by having the backend create the invoice in the first place. If you
-need the order link to be trustworthy, create it from the backend.
-
-An origin list is not access control: `curl` ignores CORS entirely. What bounds
-abuse of the public endpoint is `public_api.rate_per_minute` per client address —
-and that keying only works if `app.trusted_proxies` is set correctly behind a
-proxy.
+Your backend owns the order, so it is also the right place to decide what the page
+may see. cryptopay has no per-customer authorisation and no idea whose order an
+invoice belongs to — that knowledge lives in your schema.
 
 ## Status, and what to do at each one
 

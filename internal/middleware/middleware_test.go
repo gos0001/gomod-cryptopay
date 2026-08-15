@@ -19,7 +19,7 @@ func init() { gin.SetMode(gin.TestMode) }
 func serve(t *testing.T, keys []string, header string) int {
 	t.Helper()
 
-	mw := New(Config{Keys: keys}, CORSConfig{}, PublicConfig{RatePerMinute: 60, Burst: 10})
+	mw := New(Config{Keys: keys})
 
 	r := gin.New()
 	r.GET("/guarded", mw.APIKey(), func(c *gin.Context) { c.Status(http.StatusTeapot) })

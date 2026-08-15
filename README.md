@@ -5,10 +5,10 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/gos0001/gomod-cryptopay.svg)](https://pkg.go.dev/github.com/gos0001/gomod-cryptopay)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> **Stable: `v1.1.0`** — `ghcr.io/gos0001/gomod-cryptopay:1`
+> **Stable: `v1.2.0`** — `ghcr.io/gos0001/gomod-cryptopay:1`
 
 ```bash
-docker pull ghcr.io/gos0001/gomod-cryptopay:1.1.0
+docker pull ghcr.io/gos0001/gomod-cryptopay:1.2.0
 ```
 
 Crypto payment service in a container. It issues invoices, watches TRON and BSC
@@ -117,6 +117,13 @@ A JSON number is a float64, and an 18-decimal amount does not survive one.
 Everything under `/api/v1` requires `X-Api-Key`; a wrong or missing key is `401`.
 `/healthz` is open. Every response is `{"data": ...}` or `{"error": ...}`.
 
+**This is a server-to-server API.** Every endpoint, invoice creation included,
+is authenticated, so the service belongs on your internal network and the key
+belongs on your backend. A customer's browser talks to *your* backend, which
+creates the invoice and passes back the address and amount — the same shape as
+any other payment provider. There is no CORS configuration because nothing in a
+browser is meant to reach this service directly.
+
 | Method | Path | Does |
 |---|---|---|
 | `POST` | `/api/v1/invoices` | create an invoice — `201`, or `200` with the same invoice when `external_id` repeats |
@@ -126,10 +133,6 @@ Everything under `/api/v1` requires `X-Api-Key`; a wrong or missing key is `401`
 | `GET` | `/api/v1/assets` | the configured assets, with their `step` and decimals |
 | `GET` | `/api/v1/orphans` | transfers that matched no invoice |
 | `GET` | `/healthz` | liveness; no key |
-
-`POST /api/v1/invoices` is the one endpoint that can also be opened to callers
-with no key, for creation straight from a customer's browser — see
-[Creating from a browser](#creating-from-a-browser).
 
 ### Creating an invoice
 
@@ -170,53 +173,6 @@ reading `amount` a bug that works in testing.
 `GET /api/v1/invoices` accepts `status`, `network`, `asset_id`, `external_id`,
 `created_from`, `created_to`, `limit` and `cursor`, and returns `next_cursor`
 when more rows follow.
-
-### Creating from a browser
-
-Set `public_api.invoice_create` and list your site in `cors.allowed_origins`, and
-the page can create an invoice with no key in the JavaScript:
-
-```js
-const r = await fetch('https://pay.example.com/api/v1/invoices', {
-  method: 'POST',
-  headers: {'Content-Type': 'application/json'},
-  body: JSON.stringify({network: 'tron', symbol: 'USDT', amount: '10.50'}),
-});
-const {data} = await r.json();
-show(data.invoice.pay_address, data.invoice.pay_amount);   // never data.invoice.amount
-```
-
-**Only creation is opened.** A browser cannot list invoices, read one back, cancel
-one, or see orphan transfers — those stay behind `X-Api-Key`, which belongs on
-your server and nowhere else. So the page shows the address and amount, and the
-**status comes from your own backend**, which learns it from the webhook. There is
-no public endpoint to poll, deliberately: it would let anyone walk your invoices.
-
-Three fields are refused or ignored without a key, and each for a reason worth
-knowing:
-
-| Field | Public request | Why |
-|---|---|---|
-| `external_id` | `400` | it is the idempotency key: repeating a merchant's `order-42` would return that invoice in full — id, amounts, description, metadata. A read of somebody else's order dressed as a write |
-| `metadata` | `400` | up to 8 KiB of arbitrary JSON per invoice; a browser has nothing to put there |
-| `expires_in` | ignored | an anonymous caller could otherwise hold an amount for a day |
-
-**CORS is not access control.** An origin list governs who may *read* responses,
-not who may send a request: anything that is not a browser — `curl` included —
-ignores it entirely. Once `public_api.invoice_create` is on, the endpoint is open
-to whoever can reach it, and what bounds abuse is the rate limit below, not the
-origin list. That is also why nothing but creation is opened.
-
-The limit exists for a specific reason: each invoice consumes a nonce, an asset
-has `nonce_max` of them, and a used amount stays reserved for `ttl +
-amount_hold` after the invoice ends. Unlimited anonymous creation would exhaust
-the amount space and deny payment to real customers — that, not disk, is the
-risk.
-
-If your page is behind a reverse proxy, set `app.trusted_proxies`. Without it the
-limit counts every request against the proxy's own address; with every proxy
-trusted — which is what gin does when the setting is empty of meaning — an
-attacker resets their bucket by sending a different `X-Forwarded-For`.
 
 ---
 
@@ -311,7 +267,6 @@ not a failure. A missing file is fatal.
 | Key | Default | Purpose |
 |---|---|---|
 | `app.addr` | `":8080"` | listen address. The image's `HEALTHCHECK` targets port 8080 — move the listener and you must override the healthcheck too |
-| `app.trusted_proxies` | `[]` | IPs or CIDRs whose `X-Forwarded-For` may be believed. Empty trusts none, so the client address is the socket's peer. Behind nginx, list nginx — otherwise every request is attributed to the proxy and the public rate limit counts them as one client |
 | `log.level` | `"info"` | `debug`, `info`, `warn`, `error` |
 | `log.format` | `"json"` | `json`, or `console` for development |
 
@@ -333,34 +288,6 @@ into the binary and every statement in it is idempotent.
 | `keys` | — | **required**, at least one; each ≥ 24 characters. Compared in constant time |
 
 Rotate by listing both keys, moving callers, then removing the old one.
-
-### `cors`
-
-Off by default: a deployment that never talks to a browser sends no CORS headers
-at all.
-
-| Key | Default | Purpose |
-|---|---|---|
-| `allowed_origins` | `[]` | exact origins, scheme and port included. `https://shop.example.com` does not cover `http`, a subdomain, or `:8443`. A trailing slash is refused at startup rather than silently never matching |
-| `allow_all_origins` | `false` | answer every origin. Safe only because this API never uses cookies — it authenticates with a header, so a hostile page gains nothing its own server could not do |
-| `max_age` | `"12h"` | how long a browser may cache a preflight. Every uncached preflight is an extra round trip |
-
-`Access-Control-Allow-Credentials` is never sent, and there is no setting to turn
-it on. With credentials allowed, a page could act with a visitor's ambient
-session; header authentication has no such ambient state, which is the property
-worth keeping.
-
-### `public_api`
-
-| Key | Default | Purpose |
-|---|---|---|
-| `invoice_create` | `false` | allow `POST /api/v1/invoices` with no key. Nothing else is opened |
-| `rate_per_minute` | `30` | per client address, public requests only. A backend holding a key is never throttled |
-| `burst` | `10` | how many may arrive at once before the rate applies |
-
-Off by default on purpose: pulling a newer image must not change who may write to
-your database. See [Creating from a browser](#creating-from-a-browser) for what
-the public path refuses and why.
 
 ### `invoices`
 

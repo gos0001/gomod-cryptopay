@@ -1,7 +1,6 @@
 {
   "app": {
-    "addr": ":8080",
-    "trusted_proxies": []
+    "addr": ":8080"
   },
   "log": {
     "level": "info",
@@ -16,16 +15,6 @@
     "keys": [
       "REPLACE-ME-openssl-rand-hex-32"
     ]
-  },
-  "cors": {
-    "allowed_origins": [],
-    "allow_all_origins": false,
-    "max_age": "12h"
-  },
-  "public_api": {
-    "invoice_create": false,
-    "rate_per_minute": 30,
-    "burst": 10
   },
   "bootstrap": {
     "timeout": "60s"

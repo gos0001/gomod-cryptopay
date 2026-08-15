@@ -33,15 +33,6 @@ func NewApp(
 	pg *pkgpostgres.Pool,
 	configFile *config.File,
 ) *App {
-	// Gin trusts every proxy unless told otherwise, and then reads the client
-	// address out of X-Forwarded-For — a header the client writes. Anything that
-	// keys on the client address, the public rate limit included, would be
-	// bypassed by a single forged value. Empty configuration means trust nobody.
-	//
-	// The error is only ever returned for an unparseable entry, which LoadConfig
-	// has already refused — so by here there is nothing left for it to report.
-	_ = router.SetTrustedProxies(cfg.TrustedProxies)
-
 	return &App{
 		logger: logger,
 		router: router,

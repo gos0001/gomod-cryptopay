@@ -62,19 +62,7 @@ the mistake this design exists to prevent.
 signature before parsing the body, in this project's language. `/cryptopay-webhook`
 does this properly; call it rather than writing a second half-version here.
 
-## 4. If the browser creates invoices
-
-Only when the user says the page calls cryptopay directly. Then set
-`public_api.invoice_create: true`, list the site's exact origins in
-`cors.allowed_origins` (scheme and port included, no trailing slash), and set
-`app.trusted_proxies` if a reverse proxy sits in front.
-
-Tell the user what that opens, in one line: creation becomes available to anyone
-who can reach the endpoint — CORS is not access control — and the rate limit is
-what bounds it. Nothing else is opened, so the page cannot read invoices back and
-must learn the status from this project's own backend.
-
-## 5. Report
+## 4. Report
 
 State what you wrote, what you generated, and what the user must still do:
 
